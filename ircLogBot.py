@@ -7,6 +7,7 @@ from twisted.python import log
 import time, sys
 from os import path
 from datetime import datetime
+from random import choice
 
 # variables
 from vars import *
@@ -15,15 +16,14 @@ from vars import *
 from smtp import send_mail
 
 
-channels = []
 total_channels = []
 number_of_total_channels = 0
-count = 0
 attemps = 0
+random_nicks = []
+random_nicks.append(NICKNAME)
 
 joined_channels = ''
-write_time = datetime.now()
-all_done = False
+
 CURRENT_DIR = path.dirname(path.realpath(__file__))
 
 
@@ -49,7 +49,16 @@ class MessageLogger:
 class LogBot(irc.IRCClient):
     """A logging IRC bot."""
 
-    nickname = NICKNAME
+    channels = []
+    write_time = datetime.now()
+    all_done = False
+    count = 0
+
+    #nickname = NICKNAME
+    def __init__(self, nick, channels_to_connect=[]):
+        if channels_to_connect:
+            self.channels = channels_to_connect
+        nickname = nick
 
     def connectionMade(self):
         global attemps
@@ -59,7 +68,8 @@ class LogBot(irc.IRCClient):
         self.logger = MessageLogger(open(self.factory.filename, "a"))
         self.logger.log("[connected at %s]" %
                         time.asctime(time.localtime(time.time())))
-        self.sendLine('LIST')
+        if not self.channels:
+            self.sendLine('LIST')
 
     def connectionLost(self, reason):
         print(reason)
@@ -87,25 +97,25 @@ class LogBot(irc.IRCClient):
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        global count, write_time, channels, total_channels
+        global total_channels
         self.logger.log("[I have joined %s]" % channel)
-        count -= 1
-        delta = datetime.now() - write_time
-        if (count == 0) or (int(delta.total_seconds()) > 5):
-            if len(channels) > 0:
+        self.count -= 1
+        delta = datetime.now() - self.write_time
+        if (self.count == 0) or (int(delta.total_seconds()) > 5):
+            if len(self.channels) > 0:
                 self.join_channels()
         if channel in total_channels:
             total_channels.remove(channel)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
-        #print(channel, msg)
+        # print(channel, msg)
         user = user.split('!', 1)[0]
         try:
             MessageLogger(open(path.join(CURRENT_DIR, 'logs', channel), "a")).log('{}: {}'.format(user, msg))
         except Exception as e:
             print(e, user, channel, msg)
-        #self.logger.log("<%s> %s" % (user, msg))
+        # self.logger.log("<%s> %s" % (user, msg))
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
@@ -142,31 +152,36 @@ class LogBot(irc.IRCClient):
         return nickname + '^'
 
     def join_channels(self):
-        global count, write_time, all_done
+        global random_nicks
         if not total_channels:
             return
-        count = 0
-        print('Joining channels ({} left)'.format(len(channels)))
+        self.count = 0
+        print('Joining channels ({} left)'.format(len(self.channels)))
         # for n, channel in enumerate(channels, start=1):
         channel = []
         while True:
-            if count == STEP_CHANNELS:
+            if self.count == STEP_CHANNELS:
                 write_time = datetime.now()
+                # random_nick = 'Boko_'+''.join(choice('abcde') for _ in range(5))
+                # self.setNick(random_nick)
+                # random_nicks.append(random_nick)
                 break
-            if len(channels) > 0:
+            if len(self.channels) > 0:
                 # channel = channels.pop(0)
-                channel.append(channels.pop())
-                count += 1
+                channel.append(self.channels.pop())
+                self.count += 1
                 # self.join(channel)
             else:
-                all_done = True
+                self.all_done = True
                 break
         print('joining: {}'.format(channel))
         self.sendLine('JOIN ' + ','.join(channel))
 
-        if all_done:
+        if self.all_done:
+            # all channels are done
             print('-------JOINED--------')
-            self.sendLine('WHOIS ' + NICKNAME)
+            #for nick in random_nicks:
+            self.sendLine('WHOIS ' + self.nickname)
 
         # if n%10 == 0:
         #     self.clearLineBuffer()
@@ -175,25 +190,28 @@ class LogBot(irc.IRCClient):
         #     return
 
     def lineReceived(self, line):
-        global write_time, channels, total_channels, joined_channels, number_of_total_channels
+        global total_channels, joined_channels, number_of_total_channels
         if bytes != str and isinstance(line, bytes):
             # decode bytes from transport to unicode
             line = line.decode('utf-8', 'backslashreplace')
         line = irc.lowDequote(line)
 
-        if (write_time) and len(channels) > 0:
-            delta = datetime.now() - write_time
+        if (self.write_time) and len(self.channels) > 0:
+            delta = datetime.now() - self.write_time
             if int(delta.total_seconds()) > 5:
                 self.join_channels()
 
         try:
             prefix, command, params = irc.parsemsg(line)
-            print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
             # too many channels
             # if '405' in command:
             #     if 'You have joined too many channels' in params[2]:
             #        print('Total channels before restrict: ' + str(joined_channels))
+
+            # skip not interesting messages
+            if ('372' and '332' and '353' and 'PRIVMSG' and 'QUIT') not in command:
+                print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
             # total joined channels
             if '319' in command:
@@ -209,9 +227,9 @@ class LogBot(irc.IRCClient):
             if '322' in command:  # params[1] - channel name, params[2] - number of users
                 # print(command)
                 if int(params[2]) >= MINIMUM_USERS:
-                    channels.append(params[1])
+                    self.channels.append(params[1])
             if 'End of /LIST' in params:
-                total_channels = channels.copy()
+                total_channels = self.channels.copy()
                 number_of_total_channels = len(total_channels)
                 self.join_channels()
 
@@ -231,20 +249,23 @@ class LogBotFactory(protocol.ClientFactory):
     A new protocol instance will be created each time we connect to the server.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, nick, channels_to_connect=[]):
         self.filename = filename
+        self.channels_to_connect = channels_to_connect
+        self.nickname = nick
 
     def buildProtocol(self, addr):
-        p = LogBot()
+        p = LogBot(self.nickname, self.channels_to_connect)
         p.username = USER_NAME if USER_NAME else None
         p.password = PASSWORD if PASSWORD else None
+        p.nickname = self.nickname
         p.factory = self
         return p
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
         if attemps > ATTEMPS_TO_RECONNECT:
-            send_mail('Maximum of attemps is reached',reason)
+            send_mail('Maximum of attemps is reached', reason)
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
@@ -255,13 +276,12 @@ class LogBotFactory(protocol.ClientFactory):
 
 if __name__ == '__main__':
     # initialize logging
-    #log.startLogging(sys.stdout)
+    # log.startLogging(sys.stdout)
 
     # create factory protocol and application
     # f = LogBotFactory(sys.argv[1], sys.argv[2])
-    f = LogBotFactory('main.log')
+    f = LogBotFactory('main.log',NICKNAME)
     # connect factory to this host and port
     reactor.connectTCP("irc.freenode.net", 6667, f)
-
     # run bot
     reactor.run()
