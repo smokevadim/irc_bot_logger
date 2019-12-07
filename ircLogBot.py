@@ -8,6 +8,7 @@ import time, sys
 from os import path
 from datetime import datetime
 from random import choice
+from threading import Thread
 
 # variables
 from vars import *
@@ -17,6 +18,7 @@ from smtp import send_mail
 
 
 total_channels = []
+total_channels_flag = False
 number_of_total_channels = 0
 attemps = 0
 random_nicks = []
@@ -104,8 +106,8 @@ class LogBot(irc.IRCClient):
         if (self.count == 0) or (int(delta.total_seconds()) > 5):
             if len(self.channels) > 0:
                 self.join_channels()
-        if channel in total_channels:
-            total_channels.remove(channel)
+        # if channel in total_channels:
+        #     total_channels.remove(channel)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -190,7 +192,7 @@ class LogBot(irc.IRCClient):
         #     return
 
     def lineReceived(self, line):
-        global total_channels, joined_channels, number_of_total_channels
+        global total_channels, joined_channels, number_of_total_channels, total_channels_flag
         if bytes != str and isinstance(line, bytes):
             # decode bytes from transport to unicode
             line = line.decode('utf-8', 'backslashreplace')
@@ -210,7 +212,7 @@ class LogBot(irc.IRCClient):
             #        print('Total channels before restrict: ' + str(joined_channels))
 
             # skip not interesting messages
-            if ('372' and '332' and '353' and 'PRIVMSG' and 'QUIT') not in command:
+            if ('372' and '332' and '353' and '322' and 'PRIVMSG' and 'QUIT') not in str(command):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
             # total joined channels
@@ -227,10 +229,12 @@ class LogBot(irc.IRCClient):
             if '322' in command:  # params[1] - channel name, params[2] - number of users
                 # print(command)
                 if int(params[2]) >= MINIMUM_USERS:
-                    self.channels.append(params[1])
+                    #self.channels.append(params[1])
+                    total_channels.append(params[1])
             if 'End of /LIST' in params:
-                total_channels = self.channels.copy()
+                #total_channels = self.channels.copy()
                 number_of_total_channels = len(total_channels)
+                total_channels_flag = True
                 self.join_channels()
 
             if command in irc.numeric_to_symbolic:
@@ -274,14 +278,54 @@ class LogBotFactory(protocol.ClientFactory):
         reactor.stop()
 
 
+def run_instance(nick, channels=[]):
+    f = LogBotFactory('main.log', nick, channels)
+    reactor.connectTCP("irc.freenode.net", 6667, f)
+    reactor.run()
+
+
+class RunInThread(Thread):
+    """
+    Run bots in threads
+    """
+
+    def __init__(self, name, nick, channels = []):
+        Thread.__init__(self)
+        self.name = name
+        self.channels = channels
+        self.nick = nick
+
+    def run(self):
+        run_instance(self.nick, self.channels)
+        msg = "%s is running" % self.name
+        print(msg)
+
+
+def get_random_nick():
+    random_nick = 'Boko_'+''.join(choice('abcde') for _ in range(5))
+    random_nicks.append(random_nick)
+    return random_nick
+
+
 if __name__ == '__main__':
     # initialize logging
     # log.startLogging(sys.stdout)
 
     # create factory protocol and application
     # f = LogBotFactory(sys.argv[1], sys.argv[2])
-    f = LogBotFactory('main.log',NICKNAME)
-    # connect factory to this host and port
-    reactor.connectTCP("irc.freenode.net", 6667, f)
-    # run bot
-    reactor.run()
+    first_thread = RunInThread('first',NICKNAME)
+    first_thread.start()
+
+    while True:
+        iterate = 0
+        if total_channels_flag:
+            channels = []
+            for n, ch in enumerate(total_channels, start=1):
+                channels.append(ch)
+                if n % 20 == 0:
+                    iterate += 1
+                    RunInThread(str(iterate), get_random_nick(), channels).start()
+                    time.sleep(1)
+                    channels.clear()
+            break
+        time.sleep(3)
