@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from vars import *
 import smtplib
 from email.mime.multipart import MIMEMultipart
