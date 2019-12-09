@@ -143,10 +143,10 @@ class LogBot(irc.IRCClient):
         # print(channel, msg)
         user = user.split('!', 1)[0]
         try:
-            logs_directory = path.join(CURRENT_DIR, 'logs', channel)
+            logs_directory = path.join(CURRENT_DIR, 'logs')
             if not path.exists(logs_directory):
                 makedirs(logs_directory)
-            MessageLogger(open(logs_directory, "a")).log('{}: {}'.format(user, msg))
+            MessageLogger(open(path.join(logs_directory, channel), "a")).log('{}: {}'.format(user, msg))
         except Exception as e:
             print(e, user, channel, msg)
         # self.logger.log("<%s> %s" % (user, msg))
