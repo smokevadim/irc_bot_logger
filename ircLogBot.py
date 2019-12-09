@@ -8,6 +8,7 @@ import time, sys
 from os import path
 from datetime import datetime
 from random import choice
+from threading import Thread
 
 # variables
 from vars import *
@@ -15,9 +16,10 @@ from vars import *
 # email transport
 from smtp import send_mail
 
-
 total_channels = []
+total_channels_flag = False
 number_of_total_channels = 0
+attemps = 0
 random_nicks = []
 random_nicks.append(NICKNAME)
 
@@ -49,25 +51,53 @@ class LogBot(irc.IRCClient):
     """A logging IRC bot."""
 
     channels = []
+    bot_channels = []
     write_time = datetime.now()
+
     all_done = False
     count = 0
+    identified = False
 
-    #nickname = NICKNAME
     def __init__(self, nick, channels_to_connect=[]):
         if channels_to_connect:
             self.channels = channels_to_connect
+            self.bot_channels = channels_to_connect.copy()
         nickname = nick
-        self.attemps = 0
 
     def connectionMade(self):
-        self.attemps += 1
+        global attemps
+
+        attemps += 1
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
-        self.logger.log("[connected at %s]" %
-                        time.asctime(time.localtime(time.time())))
-        if not self.channels:
+
+        ### others bots
+        if self.channels:
+            self.logger.log("[{}: connected at {}, have {} channels to join]".format(
+                self.nickname,
+                time.asctime(time.localtime(time.time())),
+                len(self.channels)
+            ))
+
+            ### trying to register nickname
+            #s = 'msg NickServ REGISTER {} {}'.format(PASSWORD, REGISTERED_EMAIL)
+            self.make_identify()
+            #self.sendLine(s)
+
+        ### first bot
+        else:
+            self.logger.log("[{} (FIRST BOT): connected at {}]".format(
+                self.nickname,
+                time.asctime(time.localtime(time.time())),
+            ))
+
+            ### asking server for all channels
             self.sendLine('LIST')
+
+    def make_identify(self):
+        s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
+        print(s)
+        self.msg('NickServ', s)
 
     def connectionLost(self, reason):
         print(reason)
@@ -84,7 +114,9 @@ class LogBot(irc.IRCClient):
         """
         Called after successfully signing on to the server.
         """
-        self.attemps = 0
+        global attemps
+        attemps = 0
+
 
     def kickedFrom(self, channel, kicker, message):
         """
@@ -94,15 +126,14 @@ class LogBot(irc.IRCClient):
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        global total_channels
         self.logger.log("[I have joined %s]" % channel)
         self.count -= 1
         delta = datetime.now() - self.write_time
         if (self.count == 0) or (int(delta.total_seconds()) > 5):
             if len(self.channels) > 0:
                 self.join_channels()
-        if channel in total_channels:
-            total_channels.remove(channel)
+        # if channel in total_channels:
+        #     total_channels.remove(channel)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -126,18 +157,18 @@ class LogBot(irc.IRCClient):
             # self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
 
-    def action(self, user, channel, msg):
-        """This will get called when the bot sees someone do an action."""
-        user = user.split('!', 1)[0]
-        self.logger.log("* %s %s" % (user, msg))
+    # def action(self, user, channel, msg):
+    #     """This will get called when the bot sees someone do an action."""
+    #     user = user.split('!', 1)[0]
+    #     self.logger.log("* %s %s" % (user, msg))
 
     # irc callbacks
 
-    def irc_NICK(self, prefix, params):
-        """Called when an IRC user changes their nickname."""
-        old_nick = prefix.split('!')[0]
-        new_nick = params[0]
-        self.logger.log("%s is now known as %s" % (old_nick, new_nick))
+    # def irc_NICK(self, prefix, params):
+    #     """Called when an IRC user changes their nickname."""
+    #     old_nick = prefix.split('!')[0]
+    #     new_nick = params[0]
+    #     self.logger.log("%s is now known as %s" % (old_nick, new_nick))
 
     # For fun, override the method that determines how a nickname is changed on
     # collisions. The default method appends an underscore.
@@ -151,6 +182,8 @@ class LogBot(irc.IRCClient):
     def join_channels(self):
         global random_nicks
         if not total_channels:
+            return
+        if not self.identified:
             return
         self.count = 0
         print('Joining channels ({} left)'.format(len(self.channels)))
@@ -174,10 +207,10 @@ class LogBot(irc.IRCClient):
         print('joining: {}'.format(channel))
         self.sendLine('JOIN ' + ','.join(channel))
 
-        if self.all_done:
+        if self.all_done or len(self.channels) == 0:
             # all channels are done
             print('-------JOINED--------')
-            #for nick in random_nicks:
+            # for nick in random_nicks:
             self.sendLine('WHOIS ' + self.nickname)
 
         # if n%10 == 0:
@@ -187,16 +220,11 @@ class LogBot(irc.IRCClient):
         #     return
 
     def lineReceived(self, line):
-        global total_channels, joined_channels, number_of_total_channels
+        global total_channels, joined_channels, number_of_total_channels, total_channels_flag
         if bytes != str and isinstance(line, bytes):
             # decode bytes from transport to unicode
             line = line.decode('utf-8', 'backslashreplace')
         line = irc.lowDequote(line)
-
-        if (self.write_time) and len(self.channels) > 0:
-            delta = datetime.now() - self.write_time
-            if int(delta.total_seconds()) > 5:
-                self.join_channels()
 
         try:
             prefix, command, params = irc.parsemsg(line)
@@ -206,34 +234,53 @@ class LogBot(irc.IRCClient):
             #     if 'You have joined too many channels' in params[2]:
             #        print('Total channels before restrict: ' + str(joined_channels))
 
-            # skip not interesting messages
-            if ('372' and '332' and '353' and 'PRIVMSG' and 'QUIT') not in command:
+            ### skip not interesting messages
+            to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
+            #to_skip = set(['353', '322', 'PRIVMSG'])
+            if command not in to_skip:
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
-            # total joined channels
+            ### total joined channels
             if '319' in command:
                 joined_channels += params[2]
             if '318' in command:
                 if 'End of /WHOIS list.' in params:
-                    self.logger.log('Total joined channels: {} of all {}'.format(
+                    self.logger.log('[{}: joined channels at this time: {} of all {}]'.format(
+                        self.nickname,
                         len(joined_channels.split(' ')),
-                        str(number_of_total_channels)
-                    ))
+                        number_of_total_channels
+                        ))
 
-            # total channels on server
+            #### total channels on server
             if '322' in command:  # params[1] - channel name, params[2] - number of users
                 # print(command)
                 if int(params[2]) >= MINIMUM_USERS:
-                    self.channels.append(params[1])
+                    # self.channels.append(params[1])
+                    total_channels.append(params[1])
             if 'End of /LIST' in params:
-                total_channels = self.channels.copy()
+                # total_channels = self.channels.copy()
                 number_of_total_channels = len(total_channels)
-                self.join_channels()
-
+                total_channels_flag = True
+                self.logger.log('[Summary channels to join: {}]'.format(len(total_channels)))
             if command in irc.numeric_to_symbolic:
                 command = irc.numeric_to_symbolic[command]
             else:
                 self.handleCommand(command, prefix, params)
+
+            ### Identifiend
+            if 'NOTICE' in command:
+                if (self.nickname == params[0]):
+                    if ('You are now identified' in params[1]) or ('There are already' in params[1]):
+                        ### Server may have limit for nick identified in one account
+                        ### and we need to try to get all others channels without make identified
+                        self.identified = True
+
+            ### joining channels
+            if self.write_time and len(self.channels) > 0:
+                delta = datetime.now() - self.write_time
+                if int(delta.total_seconds()) > 5:
+                    self.join_channels()
+
 
         except irc.IRCBadMessage:
             print(line)
@@ -261,8 +308,8 @@ class LogBotFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
-        if self.attemps > ATTEMPS_TO_RECONNECT:
-            send_mail('Maximum of attemps is reached', reason)
+        if attemps > ATTEMPS_TO_RECONNECT:
+            send_mail('Maximum of attemps is reached', str(reason))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
@@ -271,14 +318,58 @@ class LogBotFactory(protocol.ClientFactory):
         reactor.stop()
 
 
+def run_instance(nick, channels=[]):
+    f = LogBotFactory('main.log', nick, channels)
+    reactor.connectTCP(SERVER_NAME, 6667, f)
+    reactor.run()
+
+
+class RunInThread(Thread):
+    """
+    Run bots in threads
+    """
+
+    def __init__(self, name, nick, channels=[]):
+        Thread.__init__(self)
+        self.name = name
+        self.channels = channels
+        self.nick = nick
+
+    def run(self):
+        try:
+            run_instance(self.nick, self.channels)
+        except Exception as e:
+            print ('Error when running instance (%s)' % e)
+        msg = "%s is running" % self.name
+        print(msg)
+
+
+def get_random_nick():
+    random_nick = 'Boko_' + ''.join(choice('abcdefgh') for _ in range(7))
+    random_nicks.append(random_nick)
+    return random_nick
+
+
 if __name__ == '__main__':
     # initialize logging
     # log.startLogging(sys.stdout)
 
     # create factory protocol and application
     # f = LogBotFactory(sys.argv[1], sys.argv[2])
-    f = LogBotFactory('main.log',NICKNAME)
-    # connect factory to this host and port
-    reactor.connectTCP("irc.freenode.net", 6667, f)
-    # run bot
-    reactor.run()
+    first_thread = RunInThread('first', NICKNAME)
+    first_thread.start()
+
+    while True:
+        iterate = 0
+        if total_channels_flag:
+            channels = []
+            for n, ch in enumerate(total_channels, start=1):
+                channels.append(ch)
+                if (n % 100 == 0) or (n == len(total_channels)):
+                    iterate += 1
+                    RunInThread(str(iterate), get_random_nick(), channels.copy()).start()
+                    time.sleep(10)
+                    channels.clear()
+            print('-------------ALL BOTS (%s) RUNNING-------------' % iterate)
+            break
+        time.sleep(3)
