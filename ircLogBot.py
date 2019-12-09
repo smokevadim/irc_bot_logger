@@ -241,9 +241,9 @@ class LogBot(irc.IRCClient):
             #        print('Total channels before restrict: ' + str(joined_channels))
 
             ### skip not interesting messages
-            #to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
+            to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
             #to_skip = set(['353', '322', 'PRIVMSG'])
-            to_skip = set([''])
+            #to_skip = set([''])
             if command not in to_skip:
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
@@ -369,7 +369,7 @@ if __name__ == '__main__':
         if total_channels_flag:
             channels = []
             for n, ch in enumerate(total_channels, start=1):
-                if iterate == 28: # maximum allowed bots
+                if iterate == (MAXIMUM_BOTS-1): # maximum allowed bots
                     break
                 channels.append(ch)
                 if (n % 100 == 0) or (n == len(total_channels)):

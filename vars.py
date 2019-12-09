@@ -5,6 +5,7 @@ PASSWORD = '12345'		# password to IRC server
 MINIMUM_USERS = 500		# connect to channels with minimum users
 ATTEMPS_TO_RECONNECT = 5 	# attemps to try reconnect on one bot
 STEP_CHANNELS = 10 		# number of one time channels subcribe (server not alowed more than 10)
+MAXIMUM_BOTS = 29       	# maximum bots (on 30 server will disconnect)
 
 ### for email notification
 ### if use gmail.com need to enable this option on https://myaccount.google.com/lesssecureapps
