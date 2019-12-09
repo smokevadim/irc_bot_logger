@@ -18,7 +18,6 @@ from smtp import send_mail
 
 total_channels = []
 number_of_total_channels = 0
-attemps = 0
 random_nicks = []
 random_nicks.append(NICKNAME)
 
@@ -59,11 +58,10 @@ class LogBot(irc.IRCClient):
         if channels_to_connect:
             self.channels = channels_to_connect
         nickname = nick
+        self.attemps = 0
 
     def connectionMade(self):
-        global attemps
-
-        attemps += 1
+        self.attemps += 1
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
         self.logger.log("[connected at %s]" %
@@ -83,11 +81,10 @@ class LogBot(irc.IRCClient):
 
     # callbacks for events
     def signedOn(self):
-        global attemps
         """
         Called after successfully signing on to the server.
         """
-        attemps = 0
+        self.attemps = 0
 
     def kickedFrom(self, channel, kicker, message):
         """
@@ -264,7 +261,7 @@ class LogBotFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
-        if attemps > ATTEMPS_TO_RECONNECT:
+        if self.attemps > ATTEMPS_TO_RECONNECT:
             send_mail('Maximum of attemps is reached', reason)
         connector.connect()
 
