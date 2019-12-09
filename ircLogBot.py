@@ -5,7 +5,7 @@ from twisted.python import log
 
 # system imports
 import time, sys
-from os import path
+from os import path, makedirs
 from datetime import datetime
 from random import choice
 from threading import Thread
@@ -62,9 +62,10 @@ class LogBot(irc.IRCClient):
             self.channels = channels_to_connect
             self.bot_channels = channels_to_connect.copy()
         nickname = nick
+        self.attemps = 0
 
     def connectionMade(self):
-        self.attemps += 1
+        self.attemps = 0
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
 
@@ -106,6 +107,12 @@ class LogBot(irc.IRCClient):
         self.logger.close()
         channels = []
 
+        ### send email if attemps to connect more than in vars.py
+        self.attemps += 1
+        if self.attemps > ATTEMPS_TO_RECONNECT:
+            send_mail('Maximum of attemps is reached', str(reason))
+
+
     # callbacks for events
     def signedOn(self):
         """
@@ -136,7 +143,10 @@ class LogBot(irc.IRCClient):
         # print(channel, msg)
         user = user.split('!', 1)[0]
         try:
-            MessageLogger(open(path.join(CURRENT_DIR, 'logs', channel), "a")).log('{}: {}'.format(user, msg))
+            logs_directory = path.join(CURRENT_DIR, 'logs', channel)
+            if not path.exists(logs_directory):
+                makedirs(logs_directory)
+            MessageLogger(open(logs_directory, "a")).log('{}: {}'.format(user, msg))
         except Exception as e:
             print(e, user, channel, msg)
         # self.logger.log("<%s> %s" % (user, msg))
@@ -231,8 +241,9 @@ class LogBot(irc.IRCClient):
             #        print('Total channels before restrict: ' + str(joined_channels))
 
             ### skip not interesting messages
-            to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
+            #to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
             #to_skip = set(['353', '322', 'PRIVMSG'])
+            to_skip = set([''])
             if command not in to_skip:
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
@@ -293,7 +304,6 @@ class LogBotFactory(protocol.ClientFactory):
         self.filename = filename
         self.channels_to_connect = channels_to_connect
         self.nickname = nick
-        self.attemps = 0
 
     def buildProtocol(self, addr):
         p = LogBot(self.nickname, self.channels_to_connect)
@@ -305,13 +315,11 @@ class LogBotFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
-        if self.attemps > ATTEMPS_TO_RECONNECT:
-            send_mail('Maximum of attemps is reached', str(reason))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
         print("connection failed:", reason)
-        send_mail("connection failed:", reason)
+        send_mail("connection failed:", str(reason))
         reactor.stop()
 
 
@@ -336,7 +344,7 @@ class RunInThread(Thread):
         try:
             run_instance(self.nick, self.channels)
         except Exception as e:
-            print ('Error when running instance (%s)' % e)
+            print('Error when running instance (%s)' % e)
         msg = "%s is running" % self.name
         print(msg)
 
@@ -361,6 +369,8 @@ if __name__ == '__main__':
         if total_channels_flag:
             channels = []
             for n, ch in enumerate(total_channels, start=1):
+                if iterate == 28: # maximum allowed bots
+                    break
                 channels.append(ch)
                 if (n % 100 == 0) or (n == len(total_channels)):
                     iterate += 1
