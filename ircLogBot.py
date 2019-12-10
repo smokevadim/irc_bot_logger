@@ -235,8 +235,9 @@ class LogBot(irc.IRCClient):
             #        print('Total channels before restrict: ' + str(joined_channels))
 
             ### skip not interesting messages
-            to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
+            #to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
             #to_skip = set(['353', '322', 'PRIVMSG'])
+            to_skip = set([])
             if command not in to_skip:
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
@@ -313,8 +314,8 @@ class LogBotFactory(protocol.ClientFactory):
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print("connection failed:", reason)
-        send_mail("connection failed:", reason)
+        print("connection failed:", str(reason))
+        #send_mail("connection failed:", str(reason)
         reactor.stop()
 
 
