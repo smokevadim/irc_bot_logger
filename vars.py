@@ -1,4 +1,4 @@
-SERVER_NAME = 'irc.ayochat.or.id' # IRC server
+SERVER_NAME = 'irc.cyberarmy.net' # IRC server
 NICKNAME = 'smokevadim'		# nickname 
 USER_NAME = 'smokevadim'	# registered username to IRC server
 PASSWORD = ''			# password to IRC server

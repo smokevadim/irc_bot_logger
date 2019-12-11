@@ -277,6 +277,7 @@ class LogBot(irc.IRCClient):
             ### irc.cyberarmy.net need to pause 60 sec to request /LIST
             if 'you cannot list within the first' in ''.join([p for p in params]).lower():
                 time.sleep(60)
+                self.sendLine('LIST')
 
             ### total joined channels
             if '319' in command:
