@@ -62,7 +62,7 @@ class LogBot(irc.IRCClient):
     def __init__(self, nick, channels_to_connect=[]):
         if channels_to_connect:
             self.channels = channels_to_connect.copy()
-            self.bot_channels = channels_to_connect.copy()
+            self.bot_channels = channels_to_connect[:]
         nickname = nick
         self.attemps = 0
 
@@ -423,7 +423,7 @@ if __name__ == '__main__':
                 channels.append(ch)
                 if (n % MAXIMUM_CHANNELS_IN_ONE_BOT == 0) or (n == len(total_channels)):
                     iterate += 1
-                    RunInThread(str(iterate), get_random_nick(), channels.copy()).start()
+                    RunInThread(str(iterate), get_random_nick(), channels[:]).start()
                     channels.clear()
                     if n == len(total_channels):
                         break
