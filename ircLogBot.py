@@ -38,6 +38,7 @@ class MessageLogger:
 
     def log(self, message):
         """Write a message to the file."""
+        print(message)
         timestamp = time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime(time.time()))
         self.file.write('%s %s\n' % (timestamp, message.encode('utf-8')))
         self.file.flush()
@@ -52,6 +53,7 @@ class LogBot(irc.IRCClient):
     channels = []
     bot_channels = []
     write_time = datetime.now()
+    bot_signed = False
 
     all_done = False
     count = 0
@@ -59,7 +61,7 @@ class LogBot(irc.IRCClient):
 
     def __init__(self, nick, channels_to_connect=[]):
         if channels_to_connect:
-            self.channels = channels_to_connect
+            self.channels = channels_to_connect.copy()
             self.bot_channels = channels_to_connect.copy()
         nickname = nick
         self.attemps = 0
@@ -68,6 +70,40 @@ class LogBot(irc.IRCClient):
         self.attemps = 0
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
+
+    def make_identify(self):
+        s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
+        print(s)
+        self.msg('NickServ', s)
+
+    def connectionLost(self, reason):
+        print(reason)
+        irc.IRCClient.connectionLost(self, reason)
+        self.logger.log("[%s: disconnected at %s (%s) (attemps: %s)]" %
+                        (self.nickname,
+                        time.asctime(time.localtime(time.time())),
+                        reason,
+                        self.attemps
+                        ))
+
+        self.logger.close()
+
+        channels = []
+
+        ### send email if attemps to connect more than in vars.py
+        self.attemps += 1
+        if (self.attemps > ATTEMPS_TO_RECONNECT) and not self.already_send_mail_flag:
+            send_mail('Maximum of attemps is reached', str(reason))
+            self.already_send_mail_flag = True
+            reactor.stop
+
+    # callbacks for events
+    def signedOn(self):
+        """
+        Called after successfully signing on to the server.
+        """
+        self.attemps = 0
+        self.bot_signed = True
 
         ### others bots
         if self.channels:
@@ -78,9 +114,10 @@ class LogBot(irc.IRCClient):
             ))
 
             ### trying to register nickname
-            #s = 'msg NickServ REGISTER {} {}'.format(PASSWORD, REGISTERED_EMAIL)
-            self.make_identify()
-            #self.sendLine(s)
+            # s = 'msg NickServ REGISTER {} {}'.format(PASSWORD, REGISTERED_EMAIL)
+            if self.password:
+                self.make_identify()
+            # self.sendLine(s)
 
         ### first bot
         else:
@@ -91,35 +128,6 @@ class LogBot(irc.IRCClient):
 
             ### asking server for all channels
             self.sendLine('LIST')
-
-    def make_identify(self):
-        s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
-        print(s)
-        self.msg('NickServ', s)
-
-    def connectionLost(self, reason):
-        print(reason)
-        irc.IRCClient.connectionLost(self, reason)
-        self.logger.log("[disconnected at %s (%s)]" %
-                        (time.asctime(time.localtime(time.time())),
-                         reason)
-                        )
-        self.logger.close()
-        channels = []
-
-        ### send email if attemps to connect more than in vars.py
-        self.attemps += 1
-        if self.attemps > ATTEMPS_TO_RECONNECT:
-            send_mail('Maximum of attemps is reached', str(reason))
-
-
-    # callbacks for events
-    def signedOn(self):
-        """
-        Called after successfully signing on to the server.
-        """
-        self.attemps = 0
-
 
     def kickedFrom(self, channel, kicker, message):
         """
@@ -189,14 +197,16 @@ class LogBot(irc.IRCClient):
         global random_nicks
         if not total_channels:
             return
-        if not self.identified:
+        if (not self.identified) and PASSWORD:
+            return
+        if not self.bot_signed:
             return
         self.count = 0
         print('Joining channels ({} left)'.format(len(self.channels)))
         # for n, channel in enumerate(channels, start=1):
         channel = []
         while True:
-            if self.count == STEP_CHANNELS:
+            if self.count == STEP_JOIN_ONE_TIME_CHANNELS:
                 write_time = datetime.now()
                 # random_nick = 'Boko_'+''.join(choice('abcde') for _ in range(5))
                 # self.setNick(random_nick)
@@ -204,7 +214,9 @@ class LogBot(irc.IRCClient):
                 break
             if len(self.channels) > 0:
                 # channel = channels.pop(0)
-                channel.append(self.channels.pop())
+                channel_to_join = self.channels.pop()
+                if channel_to_join not in joined_channels:
+                    channel.append(channel_to_join)
                 self.count += 1
                 # self.join(channel)
             else:
@@ -229,7 +241,8 @@ class LogBot(irc.IRCClient):
         global total_channels, joined_channels, number_of_total_channels, total_channels_flag
         if bytes != str and isinstance(line, bytes):
             # decode bytes from transport to unicode
-            line = line.decode('utf-8', 'backslashreplace')
+            #line = line.decode('utf-8', 'backslashreplace')
+            line = line.decode('utf-8', 'ignore')
         line = irc.lowDequote(line)
 
         try:
@@ -241,30 +254,54 @@ class LogBot(irc.IRCClient):
             #        print('Total channels before restrict: ' + str(joined_channels))
 
             ### skip not interesting messages
-            to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
-            #to_skip = set(['353', '322', 'PRIVMSG'])
-            #to_skip = set([''])
-            if command not in to_skip:
+            # to_skip = set(['372', '332', '353', '322', 'PRIVMSG', 'QUIT'])
+            # to_skip = set(['353', '322', 'PRIVMSG'])
+            to_skip = set([''])
+            if (command not in to_skip) or (FULL_LOG == 1):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
+
+            ### ERROR
+            if 'error' in command.lower():
+                if 'too fast' in params[0]:
+                    self.logger.log('[{}: An error occured: {}]'.format(
+                        self.nickname,
+                        params[0]
+                    ))
+                    time.sleep(10)
+            if '4' in str(command)[0]:
+                self.logger.log('[{}: An error occured: {}]'.format(
+                    self.nickname,
+                    ' '.join([s for s in params])
+                ))
+
+            ### irc.cyberarmy.net need to pause 60 sec to request /LIST
+            if 'you cannot list within the first' in ''.join([p for p in params]).lower():
+                time.sleep(60)
 
             ### total joined channels
             if '319' in command:
                 joined_channels += params[2]
             if '318' in command:
-                if 'End of /WHOIS list.' in params:
-                    self.logger.log('[{}: joined channels at this time: {} of all {}]'.format(
-                        self.nickname,
-                        len(joined_channels.split(' ')),
-                        number_of_total_channels
-                        ))
+                self.logger.log('[{}: joined channels at this time: {} of all {}]'.format(
+                    self.nickname,
+                    len(joined_channels.split(' '))-1,
+                    number_of_total_channels
+                ))
+            ### signed on server
+            if ('376' in command) or ('422' in command):
+                self.signedOn()
 
             #### total channels on server
             if '322' in command:  # params[1] - channel name, params[2] - number of users
                 # print(command)
-                if int(params[2]) >= MINIMUM_USERS:
-                    # self.channels.append(params[1])
-                    total_channels.append(params[1])
-            if 'End of /LIST' in params:
+                try:
+                    if int(params[-2]) >= MINIMUM_USERS:
+                        # self.channels.append(params[1])
+                        total_channels.append(params[1])
+                except:
+                    print ('Channel %s have unformatted number of users' % params[1])
+            # if 'End of /LIST' in params:
+            if '323' in command:
                 # total_channels = self.channels.copy()
                 number_of_total_channels = len(total_channels)
                 total_channels_flag = True
@@ -304,22 +341,33 @@ class LogBotFactory(protocol.ClientFactory):
         self.filename = filename
         self.channels_to_connect = channels_to_connect
         self.nickname = nick
+        self.already_send_mail_flag = False
+        self.attemps = 0
+
 
     def buildProtocol(self, addr):
         p = LogBot(self.nickname, self.channels_to_connect)
-        p.username = USER_NAME if USER_NAME else None
+        p.username = USER_NAME if USER_NAME else self.nickname
         p.password = PASSWORD if PASSWORD else None
         p.nickname = self.nickname
         p.factory = self
+        p.already_send_mail_flag = self.already_send_mail_flag
         return p
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
-        connector.connect()
+        self.attemps += 1
+        if (self.attemps > ATTEMPS_TO_RECONNECT) and not self.already_send_mail_flag:
+            send_mail("connection failed:", str(reason))
+            self.already_send_mail_flag = True
+        else:
+            connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
         print("connection failed:", reason)
-        send_mail("connection failed:", str(reason))
+        if not self.already_send_mail_flag:
+            send_mail("connection failed:", str(reason))
+            self.already_send_mail_flag = True
         reactor.stop()
 
 
@@ -344,7 +392,7 @@ class RunInThread(Thread):
         try:
             run_instance(self.nick, self.channels)
         except Exception as e:
-            print('Error when running instance (%s)' % e)
+            pass
         msg = "%s is running" % self.name
         print(msg)
 
@@ -369,14 +417,17 @@ if __name__ == '__main__':
         if total_channels_flag:
             channels = []
             for n, ch in enumerate(total_channels, start=1):
-                if iterate == (MAXIMUM_BOTS-1): # maximum allowed bots
+                if iterate == MAXIMUM_BOTS:  # maximum allowed bots
                     break
                 channels.append(ch)
-                if (n % 100 == 0) or (n == len(total_channels)):
+                if (n % MAXIMUM_CHANNELS_IN_ONE_BOT == 0) or (n == len(total_channels)):
                     iterate += 1
                     RunInThread(str(iterate), get_random_nick(), channels.copy()).start()
-                    time.sleep(10)
                     channels.clear()
+                    if n == len(total_channels):
+                        break
+                    time.sleep(60)
+
             print('-------------ALL BOTS (%s) RUNNING-------------' % iterate)
             break
-        time.sleep(3)
+        time.sleep(3)  # 3
