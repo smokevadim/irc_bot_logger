@@ -9,6 +9,8 @@ def send_mail(subject, body):
     """
     Function to send email message
     """
+    if (not EMAIL_PASSWORD) or (not EMAIL_SERVER) or (not ADDR_FROM) or (not ADDR_TO):
+        return
     msg = MIMEMultipart()
     msg['From'] = ADDR_FROM
     msg['To'] = ADDR_TO
