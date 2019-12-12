@@ -9,6 +9,7 @@ from os import path, makedirs
 from datetime import datetime
 from random import choice
 from threading import Thread
+import base64
 
 # variables
 from vars import *
@@ -70,6 +71,17 @@ class LogBot(irc.IRCClient):
         self.attemps = 0
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
+
+        # FREENODE NEED SASL AUTH
+        if 'freenode' in SERVER_NAME.lower():
+            self.auth_with_SASL()
+
+    def method_name(self):
+        creds = '{username}\0{username}\0{password}'.format(
+            username=self.username,
+            password=self.password)
+        self.sendLine('AUTHENTICATE {}'.format(
+            base64.b64encode(creds.encode('utf8')).decode('utf8')))
 
     def make_identify(self):
         s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
