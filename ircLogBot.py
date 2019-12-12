@@ -80,8 +80,9 @@ class LogBot(irc.IRCClient):
         """
         # FREENODE NEED SASL AUTH
         if 'freenode' in SERVER_NAME.lower():
-            self.auth_with_SASL()
-            #return
+            #self.auth_with_SASL()
+            self.sendLine('CAP LS')
+            return
 
         if self.password is not None:
             self.sendLine("PASS %s" % self.password)
@@ -97,7 +98,7 @@ class LogBot(irc.IRCClient):
         self.logger = MessageLogger(open(self.factory.filename, "a"))
 
     def auth_with_SASL(self):
-        self.sendLine('AUTHENTICATE PLAIN')
+        #self.sendLine('AUTHENTICATE PLAIN')
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
             password=self.password)
@@ -294,7 +295,10 @@ class LogBot(irc.IRCClient):
             if (command not in to_skip) or (FULL_LOG == 1):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
-            ### ERROR
+            if 'sasl' in command.lower():
+                self.auth_with_SASL()
+
+                ### ERROR
             if 'error' in command.lower():
                 if 'too fast' in params[0]:
                     self.logger.log('[{}: An error occured: {}]'.format(
