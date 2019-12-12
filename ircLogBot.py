@@ -284,7 +284,7 @@ class LogBot(irc.IRCClient):
 
         try:
             prefix, command, params = irc.parsemsg(line)
-
+            all_params = ''.join([p for p in params]).lower()
             # too many channels
             # if '405' in command:
             #     if 'You have joined too many channels' in params[2]:
@@ -297,10 +297,13 @@ class LogBot(irc.IRCClient):
             if (command not in to_skip) or (FULL_LOG == 1):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
-            if 'sasl' in ''.join([p for p in params]).lower():
+            ### SASL auth if requiered
+            if 'sasl' in all_params:
+                if 'ACK' in all_params:
+                    self.sendLine('AUTHENTICATE PLAIN')
                 self.auth_with_SASL()
 
-                ### ERROR
+            ### ERROR
             if 'error' in command.lower():
                 if 'too fast' in params[0]:
                     self.logger.log('[{}: An error occured: {}]'.format(
