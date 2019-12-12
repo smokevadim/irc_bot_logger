@@ -81,8 +81,8 @@ class LogBot(irc.IRCClient):
         # FREENODE NEED SASL AUTH
         if 'freenode' in SERVER_NAME.lower():
             #self.auth_with_SASL()
-            self.sendLine('CAP REQ :sasl')
-            print('CAP REQ :sasl')
+            self.sendLine('CAP LS')
+            print('CAP LS')
             return
 
         if self.password is not None:
