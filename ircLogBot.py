@@ -316,6 +316,8 @@ class LogBot(irc.IRCClient):
             if 'AUTHENTICATE' in command:
                 if '+' in params[0]:
                     self.auth_with_SASL()
+            if '903' in command:
+                self.identified = True
 
             ### ERROR
             if 'error' in command.lower():

@@ -1,8 +1,8 @@
-SERVER_NAME = 'irc.cyberarmy.net' # IRC server
+SERVER_NAME = 'irc.freenode.net' # IRC server
 NICKNAME = 'smokevadim'		# nickname 
 USER_NAME = 'smokevadim'	# registered username to IRC server
-PASSWORD = ''			# password to IRC server
-MINIMUM_USERS = 2		# connect to channels with minimum users
+PASSWORD = '12345'			# password to IRC server
+MINIMUM_USERS = 1000		# connect to channels with minimum users
 ATTEMPS_TO_RECONNECT = 5 	# attemps to try reconnect on one bot
 STEP_JOIN_ONE_TIME_CHANNELS = 20# number of one time channels subcribe (server not alowed more than 10)
 MAXIMUM_BOTS = 4       	# maximum bots
