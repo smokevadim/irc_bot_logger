@@ -1,8 +1,8 @@
-SERVER_NAME = 'irc.cyberarmy.com' # IRC server
+SERVER_NAME = 'irc.quakenet.org' # IRC server
 PORT = 6667
-NICKNAME = 'rubik'		# nickname
-USER_NAME = 'rubik'	# registered username to IRC server
-PASSWORD = 'smokevadim'			# password to IRC server
+NICKNAME = 'smokevadim'		# nickname
+USER_NAME = 'smokevadim'	# registered username to IRC server
+PASSWORD = 'jo81mYUyiT'			# password to IRC server
 MINIMUM_USERS = 10		# connect to channels with minimum users
 MAXIMUM_USERS = 10000		# connect to channels with maximum users
 ATTEMPS_TO_RECONNECT = 5 	# attemps to try reconnect on one bot

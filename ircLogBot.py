@@ -117,6 +117,10 @@ class LogBot(irc.IRCClient):
         print(s)
         self.msg('NickServ', s)
 
+        # for quakenet
+        if 'quakenet' in SERVER_NAME:
+            self.sendLine('/auth {smokevadim} {jo81mYUyiT}'.format(USER_NAME, PASSWORD))
+
     def connectionLost(self, reason):
         print(reason)
         irc.IRCClient.connectionLost(self, reason)
