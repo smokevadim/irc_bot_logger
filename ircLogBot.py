@@ -67,14 +67,34 @@ class LogBot(irc.IRCClient):
         nickname = nick
         self.attemps = 0
 
+    def register(self, nickname, hostname='foo', servername='bar'):
+        """
+        Login to the server.
+
+        @type nickname: C{str}
+        @param nickname: The nickname to register.
+        @type hostname: C{str}
+        @param hostname: If specified, the hostname to logon as.
+        @type servername: C{str}
+        @param servername: If specified, the servername to logon as.
+        """
+        # FREENODE NEED SASL AUTH
+        if 'freenode' in SERVER_NAME.lower():
+            self.auth_with_SASL()
+            return
+
+        if self.password is not None:
+            self.sendLine("PASS %s" % self.password)
+        self.setNick(nickname)
+        if self.username is None:
+            self.username = nickname
+        self.sendLine("USER %s %s %s :%s" % (self.username, hostname, servername, self.realname))
+
+
     def connectionMade(self):
         self.attemps = 0
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
-
-        # FREENODE NEED SASL AUTH
-        if 'freenode' in SERVER_NAME.lower():
-            self.auth_with_SASL()
 
     def auth_with_SASL(self):
         creds = '{username}\0{username}\0{password}'.format(
