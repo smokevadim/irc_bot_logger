@@ -99,7 +99,7 @@ class LogBot(irc.IRCClient):
 
     def auth_with_SASL(self):
         #self.sendLine('AUTHENTICATE PLAIN')
-        self.sendLine('CAP REQ :sasl')
+
         print('CAP REQ :sasl')
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
@@ -301,11 +301,15 @@ class LogBot(irc.IRCClient):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
             ### SASL auth if requiered
-            if 'sasl' in all_params:
-                if 'ack' in all_params:
+            if 'CAP' in command:
+                if 'ACK' in params[1]:
                     self.sendLine('AUTHENTICATE PLAIN')
-                    print('AUTHENTICATE PLAIN')
-                self.auth_with_SASL()
+            if 'sasl' in all_params:
+                self.sendLine('CAP REQ :sasl')
+
+            if 'AUTHENTICATE' in command:
+                if '+' in params[0]:
+                    self.auth_with_SASL()
 
             ### ERROR
             if 'error' in command.lower():
