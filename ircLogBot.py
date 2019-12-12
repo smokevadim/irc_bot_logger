@@ -100,13 +100,16 @@ class LogBot(irc.IRCClient):
     def auth_with_SASL(self):
         #self.sendLine('AUTHENTICATE PLAIN')
         self.sendLine('CAP REQ :sasl')
+        print('CAP REQ :sasl')
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
             password=self.password)
         to_send = 'AUTHENTICATE {}'.format(base64.b64encode(creds.encode('utf8')).decode('utf8'))
         self.sendLine(to_send)
+        print(to_send)
         self.sendLine('CAP END')
-        print('Authenticating with SASL: ' + to_send)
+        print('CAP END')
+        #print('Authenticating with SASL: ' + to_send)
 
     def make_identify(self):
         s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
@@ -301,6 +304,7 @@ class LogBot(irc.IRCClient):
             if 'sasl' in all_params:
                 if 'ack' in all_params:
                     self.sendLine('AUTHENTICATE PLAIN')
+                    print('AUTHENTICATE PLAIN')
                 self.auth_with_SASL()
 
             ### ERROR
