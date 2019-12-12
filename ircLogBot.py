@@ -83,7 +83,7 @@ class LogBot(irc.IRCClient):
             #self.auth_with_SASL()
             self.sendLine('CAP LS')
             print('CAP LS')
-            return
+            #return
 
         if self.password is not None:
             self.sendLine("PASS %s" % self.password)
