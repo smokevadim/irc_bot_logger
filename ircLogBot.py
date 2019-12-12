@@ -345,6 +345,7 @@ class LogBot(irc.IRCClient):
                     len(joined_channels.split(' '))-1,
                     number_of_total_channels
                 ))
+
             ### signed on server
             signed_commands = ['903', '376', '422']
             if command in signed_commands:
