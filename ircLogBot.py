@@ -85,6 +85,10 @@ class LogBot(irc.IRCClient):
             print('CAP LS')
             #return
 
+        # for quakenet
+        if 'quakenet' in SERVER_NAME:
+            self.sendLine('auth {} {}'.format(USER_NAME, PASSWORD))
+
         if self.password is not None:
             self.sendLine("PASS %s" % self.password)
         self.setNick(nickname)
@@ -116,10 +120,6 @@ class LogBot(irc.IRCClient):
         s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
         print(s)
         self.msg('NickServ', s)
-
-        # for quakenet
-        if 'quakenet' in SERVER_NAME:
-            self.sendLine('auth {} {}'.format(USER_NAME, PASSWORD))
 
     def connectionLost(self, reason):
         print(reason)
