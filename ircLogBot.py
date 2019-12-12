@@ -304,7 +304,7 @@ class LogBot(irc.IRCClient):
             ### SASL auth if requiered
             if 'CAP' in command:
                 print('CAP')
-                if 'ACK' in params[1]:
+                if 'ack' in all_params:
                     self.sendLine('AUTHENTICATE PLAIN')
                     print('AUTHENTICATE PLAIN')
                 if 'ls' in all_params:
