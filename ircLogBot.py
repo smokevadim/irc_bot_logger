@@ -97,6 +97,7 @@ class LogBot(irc.IRCClient):
         self.logger = MessageLogger(open(self.factory.filename, "a"))
 
     def auth_with_SASL(self):
+        self.sendLine('AUTHENTICATE PLAIN')
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
             password=self.password)
