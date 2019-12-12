@@ -313,7 +313,6 @@ class LogBot(irc.IRCClient):
                         print('sasl')
                         self.sendLine('CAP REQ :sasl')
                         print('CAP REQ :sasl')
-
             if 'AUTHENTICATE' in command:
                 if '+' in params[0]:
                     self.auth_with_SASL()
@@ -347,7 +346,8 @@ class LogBot(irc.IRCClient):
                     number_of_total_channels
                 ))
             ### signed on server
-            if ('376' in command) or ('422' in command):
+            signed_commands = ['903', '376', '422']
+            if command in signed_commands:
                 self.signedOn()
 
             #### total channels on server
