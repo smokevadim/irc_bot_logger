@@ -358,8 +358,11 @@ class LogBot(irc.IRCClient):
                 # print(command)
                 try:
                     if int(params[-2]) >= MINIMUM_USERS:
-                        # self.channels.append(params[1])
-                        total_channels.append(params[1])
+                        if MAXIMUM_USERS:
+                            if int(params[-2]) <= MAXIMUM_USERS:
+                                total_channels.append(params[1])
+                        else:
+                            total_channels.append(params[1])
                 except:
                     print ('Channel %s have unformatted number of users' % params[1])
             # if 'End of /LIST' in params:
@@ -374,12 +377,12 @@ class LogBot(irc.IRCClient):
                 self.handleCommand(command, prefix, params)
 
             ### Identifiend
-            if 'NOTICE' in command:
-                if (self.nickname == params[0]):
-                    if ('You are now identified' in params[1]) or ('There are already' in params[1]):
-                        ### Server may have limit for nick identified in one account
-                        ### and we need to try to get all others channels without make identified
-                        self.identified = True
+            identified_list = ['You are now logged', 'You are now identified', 'There are already']
+            if (self.nickname == params[0]):
+                if set(identified_list).issubset(params):
+                    ### Server may have limit for nick identified in one account
+                    ### and we need to try to get all others channels without make identified
+                    self.identified = True
 
             ### joining channels
             if self.write_time and len(self.channels) > 0:
@@ -435,7 +438,7 @@ class LogBotFactory(protocol.ClientFactory):
 
 def run_instance(nick, channels=[]):
     f = LogBotFactory('main.log', nick, channels)
-    reactor.connectTCP(SERVER_NAME, 6667, f)
+    reactor.connectTCP(SERVER_NAME, PORT, f)
     reactor.run()
 
 
