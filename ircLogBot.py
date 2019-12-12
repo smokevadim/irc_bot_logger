@@ -379,10 +379,11 @@ class LogBot(irc.IRCClient):
             ### Identifiend
             identified_list = ['You are now logged', 'You are now identified', 'There are already']
             if (self.nickname == params[0]):
-                if set(identified_list).issubset(params):
-                    ### Server may have limit for nick identified in one account
-                    ### and we need to try to get all others channels without make identified
-                    self.identified = True
+                for i in identified_list:
+                    if i.lower() in all_params:
+                        ### Server may have limit for nick identified in one account
+                        ### and we need to try to get all others channels without make identified
+                        self.identified = True
 
             ### joining channels
             if self.write_time and len(self.channels) > 0:
