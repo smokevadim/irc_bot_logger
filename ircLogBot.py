@@ -299,7 +299,7 @@ class LogBot(irc.IRCClient):
 
             ### SASL auth if requiered
             if 'sasl' in all_params:
-                if 'ACK' in all_params:
+                if 'ack' in all_params:
                     self.sendLine('AUTHENTICATE PLAIN')
                 self.auth_with_SASL()
 
