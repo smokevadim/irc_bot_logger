@@ -80,8 +80,9 @@ class LogBot(irc.IRCClient):
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
             password=self.password)
-        self.sendLine('AUTHENTICATE {}'.format(
-            base64.b64encode(creds.encode('utf8')).decode('utf8')))
+        to_send = 'AUTHENTICATE {}'.format(base64.b64encode(creds.encode('utf8')).decode('utf8'))
+        self.sendLine(to_send)
+        print('Authenticating with SASL: ' + to_send)
 
     def make_identify(self):
         s = 'IDENTIFY {} {}'.format(NICKNAME, PASSWORD)
