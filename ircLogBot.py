@@ -76,7 +76,7 @@ class LogBot(irc.IRCClient):
         if 'freenode' in SERVER_NAME.lower():
             self.auth_with_SASL()
 
-    def auth_with_SASL(self):
+    def method_name(self):
         creds = '{username}\0{username}\0{password}'.format(
             username=self.username,
             password=self.password)
