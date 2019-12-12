@@ -297,8 +297,7 @@ class LogBot(irc.IRCClient):
             if (command not in to_skip) or (FULL_LOG == 1):
                 print('prefix: {}, command: {}, params: {}'.format(prefix, command, params))
 
-            if 'sasl' in command.lower():
-
+            if 'sasl' in ''.join([p for p in params]).lower():
                 self.auth_with_SASL()
 
                 ### ERROR
