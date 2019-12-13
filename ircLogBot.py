@@ -381,7 +381,7 @@ class LogBot(irc.IRCClient):
                 self.handleCommand(command, prefix, params)
 
             ### Identifiend
-            identified_list = ['You are now logged', 'You are now identified', 'There are already']
+            identified_list = ['You are now logged', 'You are now identified', 'There are already', 'No such nick']
             if (self.nickname == params[0]):
                 for i in identified_list:
                     if i.lower() in all_params:
@@ -472,15 +472,26 @@ def get_random_nick():
     random_nicks.append(random_nick)
     return random_nick
 
+def check_manual_channels():
+    global total_channels, total_channels_flag
+    channels_file = path.join(CURRENT_DIR, 'channels.txt')
+    if path.exists(channels_file):
+        with open(channels_file, 'r') as f:
+            total_channels = [row.strip() for row in f]
+            if len(total_channels) > 0:
+                total_channels_flag = True
+
 
 if __name__ == '__main__':
+    check_manual_channels()
     # initialize logging
     # log.startLogging(sys.stdout)
 
     # create factory protocol and application
     # f = LogBotFactory(sys.argv[1], sys.argv[2])
-    first_thread = RunInThread('first', NICKNAME)
-    first_thread.start()
+    if not total_channels_flag:
+        first_thread = RunInThread('first', NICKNAME)
+        first_thread.start()
 
     while True:
         iterate = 0
