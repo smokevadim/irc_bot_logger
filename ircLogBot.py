@@ -473,13 +473,14 @@ def get_random_nick():
     return random_nick
 
 def check_manual_channels():
-    global total_channels, total_channels_flag
+    global total_channels, total_channels_flag, number_of_total_channels
     channels_file = path.join(CURRENT_DIR, 'channels.txt')
     if path.exists(channels_file):
         with open(channels_file, 'r') as f:
             total_channels = [row.strip() for row in f]
             if len(total_channels) > 0:
                 total_channels_flag = True
+                number_of_total_channels = len(total_channels)
 
 
 if __name__ == '__main__':
