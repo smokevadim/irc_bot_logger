@@ -469,13 +469,14 @@ class RunInThread(Thread):
             msg = "%s is running" % self.name
             print(msg)
         except Exception as e:
-            pass
+            print('Error when running: %s' % e)
 
 
 def get_random_nick():
     random_nick = 'Boko_' + ''.join(choice('abcdefgh') for _ in range(7))
     random_nicks.append(random_nick)
     return random_nick
+
 
 def check_manual_channels():
     global total_channels, total_channels_flag, number_of_total_channels
