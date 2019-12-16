@@ -61,6 +61,7 @@ class LogBot(irc.IRCClient):
     identified = False
 
     def __init__(self, nick, channels_to_connect=[]):
+        print('Initializing bot ' + self.nickname)
         if channels_to_connect:
             self.channels = channels_to_connect.copy()
             self.bot_channels = channels_to_connect[:]
@@ -413,6 +414,7 @@ class LogBotFactory(protocol.ClientFactory):
     """
 
     def __init__(self, filename, nick, channels_to_connect=[]):
+        print('Initializing LogBotFactory for ' + nick)
         self.filename = filename
         self.channels_to_connect = channels_to_connect
         self.nickname = nick

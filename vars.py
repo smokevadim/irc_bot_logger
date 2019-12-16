@@ -1,7 +1,7 @@
-SERVER_NAME = 'irc.cyberarmy.net' # IRC server
+SERVER_NAME = 'irc.cyberarmy.com' # IRC server
 PORT = 6667
-NICKNAME = 'smokevadim'		# nickname
-USER_NAME = 'smokevadim'	# registered username to IRC server
+NICKNAME = 'rubik'		# nickname
+USER_NAME = 'rubik'	# registered username to IRC server
 PASSWORD = ''			# password to IRC server
 MINIMUM_USERS = 2		# connect to channels with minimum users
 MAXIMUM_USERS = 100		# connect to channels with maximum users
