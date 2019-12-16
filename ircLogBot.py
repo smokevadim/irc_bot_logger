@@ -245,6 +245,7 @@ class LogBot(irc.IRCClient):
         if (not self.identified) and PASSWORD:
             return
         if not self.bot_signed:
+            print('Bot not signed!')
             return
         self.count = 0
         print('Joining channels ({} left)'.format(len(self.channels)))
