@@ -149,6 +149,7 @@ class LogBot(irc.IRCClient):
         """
         self.attemps = 0
         self.bot_signed = True
+        print('Bot %s signed' % self.nickname)
 
         ### others bots
         if self.channels:
@@ -178,6 +179,7 @@ class LogBot(irc.IRCClient):
         """
         Called when I am kicked from a channel.
         """
+        print('Bot %s kicked from %s' % self.nickname, channel)
         pass
 
     def joined(self, channel):
@@ -241,8 +243,10 @@ class LogBot(irc.IRCClient):
     def join_channels(self):
         global random_nicks
         if not total_channels:
+            print('%s: no total channels to join' % self.nickname)
             return
         if (not self.identified) and PASSWORD:
+            print('Bot %s not identified' % self.nickname)
             return
         if not self.bot_signed:
             print('Bot not signed!')
@@ -462,10 +466,10 @@ class RunInThread(Thread):
     def run(self):
         try:
             run_instance(self.nick, self.channels)
+            msg = "%s is running" % self.name
+            print(msg)
         except Exception as e:
             pass
-        msg = "%s is running" % self.name
-        print(msg)
 
 
 def get_random_nick():
