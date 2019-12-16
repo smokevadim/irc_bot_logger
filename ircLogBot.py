@@ -382,7 +382,7 @@ class LogBot(irc.IRCClient):
                 number_of_total_channels = len(total_channels)
                 total_channels_flag = True
                 self.logger.log('[Summary channels to join: {}]'.format(len(total_channels)))
-                reactor.disconnect()
+                reactor.stop()
             if command in irc.numeric_to_symbolic:
                 command = irc.numeric_to_symbolic[command]
             else:
