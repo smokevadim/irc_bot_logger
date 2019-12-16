@@ -96,6 +96,7 @@ class LogBot(irc.IRCClient):
         if self.username is None:
             self.username = nickname
         self.sendLine("USER %s %s %s :%s" % (self.username, hostname, servername, self.realname))
+        print('Sending USER %s %s %s :%s' % (self.username, hostname, servername, self.realname))
 
 
     def connectionMade(self):
@@ -381,6 +382,7 @@ class LogBot(irc.IRCClient):
                 number_of_total_channels = len(total_channels)
                 total_channels_flag = True
                 self.logger.log('[Summary channels to join: {}]'.format(len(total_channels)))
+                reactor.disconnect()
             if command in irc.numeric_to_symbolic:
                 command = irc.numeric_to_symbolic[command]
             else:

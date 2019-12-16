@@ -1,4 +1,4 @@
-SERVER_NAME = 'irc.cyberarmy.com' # IRC server
+SERVER_NAME = 'irc.cyberarmy.net' # IRC server
 PORT = 6667
 NICKNAME = 'rubik'		# nickname
 USER_NAME = 'rubik'	# registered username to IRC server
