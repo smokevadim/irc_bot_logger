@@ -464,8 +464,8 @@ def run_instance(nick, channels=[]):
     try:
         f = LogBotFactory('main.log', nick, channels)
         reactor.connectTCP(SERVER_NAME, PORT, f)
-        #reactor.run()
         reactor.callLater(4, reactor.run)
+        reactor.run()
     except Exception as e:
         print('Error when running: %s' % e)
 
@@ -476,7 +476,7 @@ class RunInThread(Thread):
     """
 
     def __init__(self, name, nick, channels=[]):
-        Thread.__init__(self, target = reactor.run, args=(False,))
+        Thread.__init__(self, target=reactor.run, args=(False,))
         self.name = name
         self.channels = channels
         self.nick = nick
