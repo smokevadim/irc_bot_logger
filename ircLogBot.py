@@ -432,6 +432,7 @@ class LogBotFactory(protocol.ClientFactory):
         self.nickname = nick
         self.already_send_mail_flag = False
         self.attemps = 0
+        time.sleep(5)
 
 
 
@@ -527,7 +528,6 @@ if __name__ == '__main__':
                 if (n % MAXIMUM_CHANNELS_IN_ONE_BOT == 0) or (n == len(total_channels)):
                     iterate += 1
                     thread = RunInThread(str(iterate), get_random_nick(), channels[:])
-                    time.sleep(1)
                     thread.start()
                     channels.clear()
                     if n == len(total_channels):
