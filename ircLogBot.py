@@ -468,7 +468,7 @@ def run_instance(nick, channels=[]):
         reactor.connectTCP(SERVER_NAME, PORT, f)
         reactor.run()
     except Exception as e:
-    print('Error when running: %s' % e)
+        print('Error when running: %s' % e)
 
 
 class RunInThread(Thread):
