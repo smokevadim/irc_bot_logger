@@ -343,6 +343,13 @@ class LogBot(irc.IRCClient):
                     self.nickname,
                     ' '.join([s for s in params])
                 ))
+
+            ### 353: users in channel
+            if '353' in command:
+                if self.nickname in params[3]:
+                    self.joined(params[2])
+                    return
+
             ### 433: Nickname is already in use
             if '433' in command:
                 self.irc_ERR_NICKNAMEINUSE()
@@ -385,6 +392,7 @@ class LogBot(irc.IRCClient):
                 number_of_total_channels = len(total_channels)
                 total_channels_flag = True
                 self.logger.log('[Summary channels to join: {}]'.format(len(total_channels)))
+
             if command in irc.numeric_to_symbolic:
                 command = irc.numeric_to_symbolic[command]
             else:
