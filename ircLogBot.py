@@ -463,9 +463,9 @@ class LogBotFactory(protocol.ClientFactory):
 def run_instance(nick, channels=[]):
     try:
         f = LogBotFactory('main.log', nick, channels)
-        reactor.callLater(4, reactor.stop)
         reactor.connectTCP(SERVER_NAME, PORT, f)
-        reactor.run()
+        #reactor.run()
+        reactor.callLater(4, reactor.run)
     except Exception as e:
         print('Error when running: %s' % e)
 
