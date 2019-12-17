@@ -374,7 +374,8 @@ class LogBot(irc.IRCClient):
             ### signed on server
             signed_commands = ['903', '376', '422']
             if command in signed_commands:
-                self.signedOn()
+                if not self.bot_signed:
+                    self.signedOn()
                 return
 
             #### total channels on server
