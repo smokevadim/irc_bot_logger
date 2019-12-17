@@ -249,7 +249,6 @@ class LogBot(irc.IRCClient):
             print('%s: no total channels to join' % self.nickname)
             return
         if (not self.identified) and PASSWORD:
-            print('Bot %s not identified' % self.nickname)
             return
         if not self.bot_signed:
             return
@@ -329,6 +328,7 @@ class LogBot(irc.IRCClient):
                     self.auth_with_SASL()
             if '903' in command:
                 self.identified = True
+                return
 
             ### ERROR
             if 'error' in command.lower():
