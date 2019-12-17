@@ -424,6 +424,7 @@ class LogBotFactory(protocol.ClientFactory):
 
 
     def buildProtocol(self, addr):
+        print('Building protocol for %s' % self.nickname)
         p = LogBot(self.nickname, self.channels_to_connect)
         p.username = USER_NAME if USER_NAME else self.nickname
         p.password = PASSWORD if PASSWORD else None
