@@ -299,7 +299,7 @@ class LogBot(irc.IRCClient):
 
         try:
             prefix, command, params = irc.parsemsg(line)
-            if (prefix is None) and (command is None):
+            if 'Unknown command' in command:
                 return
             all_params = ''.join([p for p in params]).lower()
             # too many channels
