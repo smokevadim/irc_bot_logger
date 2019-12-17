@@ -343,6 +343,9 @@ class LogBot(irc.IRCClient):
                     self.nickname,
                     ' '.join([s for s in params])
                 ))
+            ### 433: Nickname is already in use
+            if '433' in command:
+                self.irc_ERR_NICKNAMEINUSE()
 
             ### irc.cyberarmy.net need to pause 60 sec to request /LIST
             if 'you cannot list within the first' in ''.join([p for p in params]).lower():
