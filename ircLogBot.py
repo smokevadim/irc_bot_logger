@@ -475,7 +475,7 @@ class RunInThread(Thread):
     """
 
     def __init__(self, name, nick, channels=[]):
-        Thread.__init__(self, target = reactor.run)
+        Thread.__init__(self, target = reactor.run, args=(False,))
         self.name = name
         self.channels = channels
         self.nick = nick
