@@ -299,8 +299,6 @@ class LogBot(irc.IRCClient):
 
         try:
             prefix, command, params = irc.parsemsg(line)
-            if 'Unknown command' in command:
-                return
             all_params = ''.join([p for p in params]).lower()
             # too many channels
             # if '405' in command:
@@ -402,7 +400,7 @@ class LogBot(irc.IRCClient):
 
             ### Identifiend
             identified_list = ['You are now logged', 'You are now identified', 'There are already', 'No such nick']
-            if (self.nickname == params[0]):
+            if (len(params) > 0) and (self.nickname == params[0]):
                 for i in identified_list:
                     if i.lower() in all_params:
                         ### Server may have limit for nick identified in one account
