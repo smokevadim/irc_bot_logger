@@ -373,6 +373,7 @@ class LogBot(irc.IRCClient):
             signed_commands = ['903', '376', '422']
             if command in signed_commands:
                 self.signedOn()
+                return
 
             #### total channels on server
             if '322' in command:  # params[1] - channel name, params[2] - number of users
@@ -467,7 +468,8 @@ def run_instance(nick, channels=[]):
         reactor.callLater(4, reactor.connectTCP, SERVER_NAME, PORT, f)
         reactor.run()
     except Exception as e:
-        print('Error when running: %s' % e)
+        pass
+        #print('Error when running: %s' % e)
 
 
 class RunInThread(Thread):
