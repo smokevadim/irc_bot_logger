@@ -299,6 +299,8 @@ class LogBot(irc.IRCClient):
 
         try:
             prefix, command, params = irc.parsemsg(line)
+            if (prefix is None) and (command is None):
+                return
             all_params = ''.join([p for p in params]).lower()
             # too many channels
             # if '405' in command:
