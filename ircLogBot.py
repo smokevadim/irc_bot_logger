@@ -150,8 +150,6 @@ class LogBot(irc.IRCClient):
         """
         Called after successfully signing on to the server.
         """
-        if self.nickname is not NICKNAME:
-            return
         self.attemps = 0
         self.bot_signed = True
         print('Bot %s signed' % self.nickname)
