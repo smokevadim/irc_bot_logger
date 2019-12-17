@@ -432,9 +432,6 @@ class LogBotFactory(protocol.ClientFactory):
         self.nickname = nick
         self.already_send_mail_flag = False
         self.attemps = 0
-        time.sleep(5)
-
-
 
     def buildProtocol(self, addr):
         print('Building protocol for %s' % self.nickname)
@@ -526,14 +523,13 @@ if __name__ == '__main__':
                     break
                 channels.append(ch)
                 if (n % MAXIMUM_CHANNELS_IN_ONE_BOT == 0) or (n == len(total_channels)):
+                    time.sleep(60)
                     iterate += 1
                     thread = RunInThread(str(iterate), get_random_nick(), channels[:])
                     thread.start()
                     channels.clear()
                     if n == len(total_channels):
                         break
-                    time.sleep(60)
-
             print('-------------ALL BOTS (%s) RUNNING-------------' % iterate)
             break
         time.sleep(3)  # 3
