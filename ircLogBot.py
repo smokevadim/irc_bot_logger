@@ -462,9 +462,12 @@ class LogBotFactory(protocol.ClientFactory):
 
 
 def run_instance(nick, channels=[]):
-    f = LogBotFactory('main.log', nick, channels)
-    reactor.connectTCP(SERVER_NAME, PORT, f)
-    reactor.run()
+    try:
+        f = LogBotFactory('main.log', nick, channels)
+        reactor.connectTCP(SERVER_NAME, PORT, f)
+        reactor.run()
+    except Exception as e:
+    print('Error when running: %s' % e)
 
 
 class RunInThread(Thread):
@@ -479,12 +482,9 @@ class RunInThread(Thread):
         self.nick = nick
 
     def run(self):
-        try:
-            run_instance(self.nick, self.channels)
-            msg = "%s is running" % self.name
-            print(msg)
-        except Exception as e:
-            print('Error when running: %s' % e)
+        run_instance(self.nick, self.channels)
+        msg = "%s is running" % self.name
+        print(msg)
 
 
 def get_random_nick():
