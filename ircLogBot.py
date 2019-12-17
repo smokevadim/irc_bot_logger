@@ -17,8 +17,6 @@ from vars import *
 # email transport
 from smtp import send_mail
 
-import pdb
-
 
 total_channels = []
 total_channels_flag = False
@@ -429,9 +427,6 @@ class LogBotFactory(protocol.ClientFactory):
 
     def __init__(self, filename, nick, channels_to_connect=[]):
         print('Initializing LogBotFactory for ' + nick)
-        ### to del
-        pdb.set_trace()
-        ### /to del
         self.filename = filename
         self.channels_to_connect = channels_to_connect
         self.nickname = nick
