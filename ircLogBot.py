@@ -345,10 +345,10 @@ class LogBot(irc.IRCClient):
                 ))
 
             ### 353: users in channel
-            if '353' in command:
-                if self.nickname in params[3]:
-                    self.joined(params[2])
-                    return
+            # if '353' in command:
+            #     if self.nickname in params[3]:
+            #         self.joined(params[2])
+            #         return
 
             ### 433: Nickname is already in use
             if '433' in command:
@@ -488,7 +488,7 @@ class RunInThread(Thread):
 
 
 def get_random_nick():
-    random_nick = 'Boko_' + ''.join(choice('abcdefgh') for _ in range(7))
+    random_nick = 'B_' + ''.join(choice('abcdefgh') for _ in range(7))
     random_nicks.append(random_nick)
     return random_nick
 
