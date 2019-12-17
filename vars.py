@@ -1,10 +1,10 @@
-SERVER_NAME = 'irc.efnet.org' # IRC server
+SERVER_NAME = 'open.ircnet.net' # IRC server
 PORT = 6667
 NICKNAME = 'rubik'		# nickname
 USER_NAME = 'rubik'	# registered username to IRC server
 PASSWORD = ''			# password to IRC server
 MINIMUM_USERS = 100		# connect to channels with minimum users
-MAXIMUM_USERS = 500		# connect to channels with maximum users
+MAXIMUM_USERS = 200		# connect to channels with maximum users
 ATTEMPS_TO_RECONNECT = 5 	# attemps to try reconnect on one bot
 STEP_JOIN_ONE_TIME_CHANNELS = 20# number of one time channels subcribe (server not alowed more than 10)
 MAXIMUM_BOTS = 4       	# maximum bots
