@@ -207,7 +207,7 @@ class LogBot(irc.IRCClient):
             MessageLogger(open(path.join(logs_directory, channel), "a")).log('{}: {}'.format(user, msg))
         except Exception as e:
             print(e, user, channel, msg)
-        # self.logger.log("<%s> %s" % (user, msg))
+            self.logger.log("%s" % (e))
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
